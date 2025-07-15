@@ -579,8 +579,8 @@ export const getEnterpriseStats = async (req: Request, res: Response): Promise<v
       }
 
       const totalMissions = enterprise.missions.length;
-      const activeMissions = enterprise.missions.filter(m => m.status === 'open').length;
-      const completedMissions = enterprise.missions.filter(m => m.status === 'completed').length;
+      const activeMissions = enterprise.missions.filter(m => m.status === 'OPEN').length;
+      const completedMissions = enterprise.missions.filter(m => m.status === 'COMPLETED').length;
       const totalSpent = enterprise.contracts.reduce((sum, c) => sum + (c.amount || 0), 0);
       const totalContracts = enterprise.contracts.length;
       const activeContracts = enterprise.contracts.filter(c => c.status === 'active').length;

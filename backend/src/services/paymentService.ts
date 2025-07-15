@@ -215,7 +215,7 @@ export class PaymentService {
         contractId: contract.id,
         amount: commission,
         currency: payment.currency,
-        status: 'completed',
+        status: 'COMPLETED',
         transactionId: `COMM_${payment.transactionId}`,
         paymentMethod: 'commission',
         type: 'commission',
@@ -302,7 +302,7 @@ export class PaymentService {
             status: 'pending'
           },
           data: {
-            status: 'completed',
+            status: 'COMPLETED',
             paidAt: new Date(),
             transactionId: reversalData.transaction_id
           }
@@ -360,17 +360,17 @@ export class PaymentService {
    */
   static async getPaymentStats(): Promise<any> {
     const totalPayments = await prisma.payment.count({
-      where: { status: 'completed' }
+      where: { status: 'COMPLETED' }
     });
 
     const totalAmount = await prisma.payment.aggregate({
-      where: { status: 'completed' },
+      where: { status: 'COMPLETED' },
       _sum: { amount: true }
     });
 
     const totalCommissions = await prisma.payment.aggregate({
       where: { 
-        status: 'completed',
+        status: 'COMPLETED',
         type: 'commission'
       },
       _sum: { amount: true }
@@ -389,7 +389,7 @@ export class PaymentService {
       totalCommissions: totalCommissions._sum.amount || 0,
       pendingReversals,
       successRate: totalPayments > 0 ? 
-        (await prisma.payment.count({ where: { status: 'completed' } }) / totalPayments) * 100 : 0
+        (await prisma.payment.count({ where: { status: 'COMPLETED' } }) / totalPayments) * 100 : 0
     };
   }
 

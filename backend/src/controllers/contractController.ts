@@ -270,7 +270,7 @@ export class ContractController {
       }
 
       // Statuts autorisés selon le rôle
-      const allowedStatuses = ['active', 'completed', 'cancelled'];
+      const allowedStatuses = ['ACTIVE', 'COMPLETED', 'CANCELLED'];
       if (!allowedStatuses.includes(status)) {
         return res.status(400).json({
           success: false,
@@ -404,7 +404,7 @@ export class ContractController {
       }
 
       // Vérifier que le contrat est terminé
-      if (contract.status !== 'completed') {
+      if (contract.status !== 'COMPLETED') {
         return res.status(400).json({
           success: false,
           message: 'Seuls les contrats terminés peuvent être notés'

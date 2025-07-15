@@ -24,7 +24,7 @@ interface UpdateMissionRequest {
   budget?: number;
   location?: string;
   isRemote?: boolean;
-  status?: 'open' | 'in_progress' | 'completed' | 'cancelled';
+  status?: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 }
 
 // CREATE - Créer une nouvelle mission
@@ -51,7 +51,7 @@ export const createMission = async (req: Request, res: Response): Promise<void> 
       data: {
         ...missionData,
         enterpriseId: enterprise.id,
-        status: 'open'
+        status: 'OPEN'
       },
       include: {
         enterprise: {

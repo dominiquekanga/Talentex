@@ -93,7 +93,7 @@ export class MatchingService {
 
     // Récupérer toutes les missions ouvertes
     const missions = await prisma.mission.findMany({
-      where: { status: 'open' },
+      where: { status: 'OPEN' },
       include: { enterprise: true }
     });
 

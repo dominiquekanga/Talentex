@@ -212,7 +212,7 @@ export class MatchingController {
         where: { id: missionId }
       });
 
-      if (!mission || mission.status !== 'open') {
+      if (!mission || mission.status !== 'OPEN') {
         return res.status(400).json({
           success: false,
           message: 'Mission non disponible'

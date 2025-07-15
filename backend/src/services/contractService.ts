@@ -301,7 +301,7 @@ Le présent contrat est régi par le droit français. En cas de litige, les trib
       where: { status: 'active' }
     });
     const completedContracts = await prisma.contract.count({
-      where: { status: 'completed' }
+      where: { status: 'COMPLETED' }
     });
     const draftContracts = await prisma.contract.count({
       where: { status: 'draft' }

@@ -651,7 +651,7 @@ export const getTalentStats = async (req: Request, res: Response): Promise<void>
       }
 
       const totalMissions = talent.missions.length;
-      const completedMissions = talent.missions.filter(m => m.status === 'completed').length;
+      const completedMissions = talent.missions.filter(m => m.status === 'COMPLETED').length;
       const totalEarnings = talent.contracts.reduce((sum, c) => sum + (c.amount || 0), 0);
       const skillsCount = talent.skills.length;
       const certificatesCount = talent.formations.filter(f => f.isCompleted).length;
@@ -718,7 +718,7 @@ export const getRecommendedMissions = async (req: Request, res: Response): Promi
     // Algorithme de recommandation basique
     const recommendedMissions = await prisma.mission.findMany({
       where: {
-        status: 'open',
+        status: 'OPEN',
         domain: {
           hasSome: talent.domain
         },
