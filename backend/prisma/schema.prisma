@@ -1,0 +1,375 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modèle utilisateur de base
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      UserRole @default(TALENT)
+  isActive  Boolean  @default(true)
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  talent      Talent?
+  enterprise  Enterprise?
+  investor    Investor?
+  admin       Admin?
+
+  // Relations communes
+  notifications Notification[]
+  sentMessages     Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageReceiver")
+
+  @@map("users")
+}
+
+enum UserRole {
+  TALENT
+  ENTERPRISE
+  INVESTOR
+  ADMIN
+}
+
+// Modèle Talent
+model Talent {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  firstName   String
+  lastName    String
+  bio         String?
+  photo       String?
+  cvUrl       String?
+  videoUrl    String?
+  score       Float    @default(0)
+  domain      String[]
+  skills      String[]
+  experience  Int      @default(0) // années d'expérience
+  hourlyRate  Float?
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  formations  FormationProgress[]
+  missions    Mission[]
+  matchings   Matching[]
+  contracts   Contract[]
+  investments Investment[]
+
+  @@map("talents")
+}
+
+// Modèle Entreprise
+model Enterprise {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  name          String
+  description   String?
+  logo          String?
+  website       String?
+  industry      String?
+  size          String?
+  subscription  Subscription?
+  isVerified    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  missions      Mission[]
+  contracts     Contract[]
+
+  @@map("enterprises")
+}
+
+// Modèle Investisseur
+model Investor {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  name        String
+  description String?
+  logo        String?
+  website     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investments Investment[]
+
+  @@map("investors")
+}
+
+// Modèle Admin
+model Admin {
+  id     String @id @default(cuid())
+  userId String @unique
+  role   String @default("admin")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admins")
+}
+
+// Modèle Abonnement
+model Subscription {
+  id            String   @id @default(cuid())
+  enterpriseId  String   @unique
+  plan          String   // basic, pro, enterprise
+  status        String   @default("active") // active, cancelled, expired
+  stripeId      String?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  enterprise    Enterprise @relation(fields: [enterpriseId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// Modèle Formation
+model Formation {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  content     String
+  videoUrl    String?
+  pdfUrl      String?
+  duration    Int      // en minutes
+  difficulty  String   // beginner, intermediate, advanced
+  domain      String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  progress    FormationProgress[]
+  quizzes     Quiz[]
+
+  @@map("formations")
+}
+
+// Modèle Progression Formation
+model FormationProgress {
+  id          String   @id @default(cuid())
+  talentId    String
+  formationId String
+  progress    Float    @default(0) // 0-100
+  isCompleted Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  talent      Talent     @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  formation   Formation  @relation(fields: [formationId], references: [id], onDelete: Cascade)
+
+  @@unique([talentId, formationId])
+  @@map("formation_progress")
+}
+
+// Modèle Quiz
+model Quiz {
+  id          String   @id @default(cuid())
+  formationId String
+  question    String
+  options     String[]
+  correctAnswer Int
+  explanation String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+
+  @@map("quizzes")
+}
+
+// Modèle Mission
+model Mission {
+  id          String   @id @default(cuid())
+  enterpriseId String
+  title       String
+  description String
+  domain      String[]
+  skills      String[]
+  duration    Int      // en jours
+  budget      Float
+  location    String?
+  isRemote    Boolean  @default(false)
+  status      MissionStatus @default(OPEN)
+  filledAt    DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  enterprise  Enterprise @relation(fields: [enterpriseId], references: [id], onDelete: Cascade)
+  talents     Talent[]
+  matchings   Matching[]
+  contracts   Contract[]
+
+  @@map("missions")
+}
+
+enum MissionStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  FILLED
+}
+
+// Modèle Matching
+model Matching {
+  id        String   @id @default(cuid())
+  missionId String
+  talentId  String
+  score     Float
+  status    String   @default("pending") // pending, accepted, rejected
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  mission   Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  talent    Talent  @relation(fields: [talentId], references: [id], onDelete: Cascade)
+
+  @@unique([missionId, talentId])
+  @@map("matchings")
+}
+
+// Modèle Contrat
+model Contract {
+  id          String   @id @default(cuid())
+  missionId   String
+  talentId    String
+  enterpriseId String
+  amount      Float
+  commission  Float
+  netAmount   Float
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("draft") // draft, signed, active, completed, cancelled
+  rating      Float?   // note de 1 à 5
+  signedAt    DateTime?
+  terms       String?  // termes du contrat
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  mission     Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  talent      Talent  @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  enterprise  Enterprise @relation(fields: [enterpriseId], references: [id], onDelete: Cascade)
+  payments    Payment[]
+  signatures  ContractSignature[]
+
+  @@map("contracts")
+}
+
+// Modèle Signature de Contrat
+model ContractSignature {
+  id          String   @id @default(cuid())
+  contractId  String
+  signerId    String
+  signerRole  String   // TALENT, ENTERPRISE, PLATFORM
+  signatureData String
+  signedAt    DateTime @default(now())
+  isSigned    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  contract    Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@map("contract_signatures")
+}
+
+// Modèle Paiement
+model Payment {
+  id            String   @id @default(cuid())
+  contractId    String
+  amount        Float
+  currency      String   @default("EUR")
+  status        String   @default("pending") // pending, completed, failed, cancelled
+  type          String?  // payment, commission, reversal
+  paymentMethod String?  // mytouchpoint, commission
+  transactionId String?  @unique
+  paidAt        DateTime?
+  metadata      String?  // JSON string pour stocker les données supplémentaires
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  contract      Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// Modèle Investissement
+model Investment {
+  id          String   @id @default(cuid())
+  investorId  String
+  talentId    String
+  amount      Float
+  percentage  Float    // pourcentage des revenus futurs
+  duration    Int      // en mois
+  status      String   @default("active") // active, completed, cancelled
+  startDate   DateTime
+  endDate     DateTime
+  totalReturn Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  investor    Investor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  talent      Talent   @relation(fields: [talentId], references: [id], onDelete: Cascade)
+
+  @@map("investments")
+}
+
+// Modèle Notification
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // CONTRACT_CREATED, CONTRACT_SIGNED, PAYMENT_RECEIVED, MISSION_ASSIGNED, FORMATION_COMPLETED, MATCHING_FOUND
+  isRead    Boolean  @default(false)
+  metadata  String?  // JSON string pour stocker les données supplémentaires
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// Modèle Message
+model Message {
+  id        String   @id @default(cuid())
+  senderId  String
+  receiverId String
+  content   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  sender    User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver  User     @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+} 

@@ -1,0 +1,27 @@
+FROM node:20-slim
+
+# Installer les dépendances système nécessaires pour Prisma
+RUN apt-get update && apt-get install -y \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Définir le répertoire de travail
+WORKDIR /app
+
+# Copier les fichiers de dépendances
+COPY package*.json ./
+
+# Installer les dépendances
+RUN npm install
+
+# Copier le reste du code source
+COPY . .
+
+# Générer le client Prisma
+RUN npx prisma generate
+
+# Exposer le port
+EXPOSE 5050
+
+# Commande par défaut
+CMD ["npm", "run", "dev"] 

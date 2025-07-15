@@ -1,0 +1,33 @@
+{
+  "name": "talenteex",
+  "version": "1.0.0",
+  "description": "Plateforme de découverte, formation, connexion et investissement dans des talents stratégiques",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "db:generate": "cd backend && npx prisma generate",
+    "db:migrate": "cd backend && npx prisma migrate dev",
+    "db:studio": "cd backend && npx prisma studio"
+  },
+  "keywords": [
+    "saas",
+    "talents",
+    "formation",
+    "matching",
+    "investissement"
+  ],
+  "author": "TalentEx Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "uuid": "^11.1.0"
+  }
+}

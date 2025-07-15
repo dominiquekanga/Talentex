@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: talenteex-postgres
+    environment:
+      POSTGRES_DB: talenteex
+      POSTGRES_USER: talenteex
+      POSTGRES_PASSWORD: talenteex123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - talenteex-network
+    restart: unless-stopped
+
+  # Redis pour le cache et les sessions
+  redis:
+    image: redis:7-alpine
+    container_name: talenteex-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - talenteex-network
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: talenteex-backend
+    environment:
+      - NODE_ENV=development
+      - PORT=5050
+      - DATABASE_URL=postgresql://talenteex:talenteex123@postgres:5432/talenteex
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - CORS_ORIGIN=http://localhost:3000
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - talenteex-network
+    restart: unless-stopped
+    command: npm run dev
+
+  # Frontend Next.js
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: talenteex-frontend
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://backend:5050
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - talenteex-network
+    restart: unless-stopped
+    command: npm run dev
+
+  # Prisma Studio (optionnel)
+  prisma-studio:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: talenteex-prisma-studio
+    environment:
+      - DATABASE_URL=postgresql://talenteex:talenteex123@postgres:5432/talenteex
+    ports:
+      - "5555:5555"
+    depends_on:
+      - postgres
+    networks:
+      - talenteex-network
+    command: npx prisma studio --hostname 0.0.0.0 --port 5555
+    profiles:
+      - tools
+
+  # MailHog pour les emails de développement
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: talenteex-mailhog
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Interface web
+    networks:
+      - talenteex-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  talenteex-network:
+    driver: bridge 
