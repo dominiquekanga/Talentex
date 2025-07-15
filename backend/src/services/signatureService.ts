@@ -7,7 +7,7 @@ export interface SignatureData {
   signerId: string;
   signerRole: 'TALENT' | 'ENTERPRISE' | 'PLATFORM';
   signatureData: string;
-  signedAt: Date | null;
+  signedAt: Date | undefined;
   isSigned: boolean;
 }
 
@@ -64,7 +64,7 @@ export class SignatureService {
         const existingSignature = await prisma.contractSignature.findFirst({
           where: {
             contractId,
-            signerRole: reqSig.role,
+            signerRole: reqSig.role as 'TALENT' | 'ENTERPRISE' | 'PLATFORM',
             signerId: reqSig.userId
           }
         });
@@ -72,7 +72,7 @@ export class SignatureService {
         if (existingSignature) {
           return {
             signerId: reqSig.userId,
-            signerRole: reqSig.role,
+            signerRole: reqSig.role as 'TALENT' | 'ENTERPRISE' | 'PLATFORM',
             signatureData: existingSignature.signatureData,
             signedAt: existingSignature.signedAt,
             isSigned: existingSignature.isSigned
@@ -84,18 +84,18 @@ export class SignatureService {
           data: {
             contractId,
             signerId: reqSig.userId,
-            signerRole: reqSig.role,
+            signerRole: reqSig.role as 'TALENT' | 'ENTERPRISE' | 'PLATFORM',
             signatureData: '',
             isSigned: false,
-            signedAt: null
+            signedAt: undefined
           }
         });
 
         return {
           signerId: reqSig.userId,
-          signerRole: reqSig.role,
+          signerRole: reqSig.role as 'TALENT' | 'ENTERPRISE' | 'PLATFORM',
           signatureData: '',
-          signedAt: null,
+          signedAt: undefined,
           isSigned: false
         };
       })
@@ -151,32 +151,30 @@ export class SignatureService {
     const signatureHash = this.generateSignatureHash(contractId, signerId, timestamp);
 
     // Mettre à jour ou créer la signature
-    await prisma.contractSignature.upsert({
-      where: {
-        contractId_signerId_signerRole: {
+    const existing = await prisma.contractSignature.findFirst({
+      where: { contractId, signerId, signerRole: signerRole as 'TALENT' | 'ENTERPRISE' | 'PLATFORM' }
+    });
+    if (existing) {
+      await prisma.contractSignature.update({
+        where: { id: existing.id },
+        data: {
+          signatureData: signatureHash,
+          isSigned: true,
+          signedAt: new Date(),
+        }
+      });
+    } else {
+      await prisma.contractSignature.create({
+        data: {
           contractId,
           signerId,
-          signerRole
+          signerRole: signerRole as 'TALENT' | 'ENTERPRISE' | 'PLATFORM',
+          signatureData: signatureHash,
+          isSigned: true,
+          signedAt: new Date(),
         }
-      },
-      update: {
-        signatureData: signatureHash,
-        isSigned: true,
-        signedAt: new Date(),
-        ipAddress,
-        userAgent
-      },
-      create: {
-        contractId,
-        signerId,
-        signerRole,
-        signatureData: signatureHash,
-        isSigned: true,
-        signedAt: new Date(),
-        ipAddress,
-        userAgent
-      }
-    });
+      });
+    }
 
     // Vérifier si toutes les signatures sont complètes
     const allSignatures = await prisma.contractSignature.findMany({
@@ -242,7 +240,7 @@ export class SignatureService {
           type: 'CONTRACT_SIGNED',
           title: 'Contrat signé avec succès',
           message: `Votre contrat pour la mission "${contract.mission.title}" a été signé par toutes les parties.`,
-          metadata: { contractId }
+          metadata: JSON.stringify({ contractId })
         }
       }),
       // Notification pour l'entreprise
@@ -252,7 +250,7 @@ export class SignatureService {
           type: 'CONTRACT_SIGNED',
           title: 'Contrat signé avec succès',
           message: `Le contrat pour la mission "${contract.mission.title}" a été signé par toutes les parties.`,
-          metadata: { contractId }
+          metadata: JSON.stringify({ contractId })
         }
       })
     ]);
@@ -297,7 +295,7 @@ export class SignatureService {
 
     const signatures = contract.signatures.map(sig => ({
       signerId: sig.signerId,
-      signerRole: sig.signerRole,
+      signerRole: sig.signerRole as 'TALENT' | 'ENTERPRISE' | 'PLATFORM',
       signatureData: sig.signatureData,
       signedAt: sig.signedAt,
       isSigned: sig.isSigned
@@ -378,7 +376,7 @@ export class SignatureService {
       },
       data: {
         isSigned: false,
-        signedAt: null,
+        signedAt: undefined,
         signatureData: ''
       }
     });
