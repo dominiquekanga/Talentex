@@ -26,7 +26,11 @@
   "license": "MIT",
   "devDependencies": {
     "@prisma/client": "^6.11.1",
+    "@types/compression": "^1.8.1",
     "@types/express": "^5.0.3",
+    "@types/morgan": "^1.9.10",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "concurrently": "^8.2.2",
     "express": "^5.1.0",
     "ts-node": "^10.9.2",

@@ -21,7 +21,7 @@ export class AdminController {
         prisma.user.count(),
         prisma.user.count({ where: { role: 'TALENT' } }),
         prisma.user.count({ where: { role: 'ENTERPRISE' } }),
-        prisma.mission.count({ where: { status: 'ACTIVE' } }),
+        prisma.mission.count({ where: { status: 'OPEN' } }),
         prisma.contract.count(),
         prisma.payment.aggregate({
           _sum: { amount: true }
@@ -429,7 +429,7 @@ export class AdminController {
 
       const mission = await prisma.mission.update({
         where: { id },
-        data: { status: 'APPROVED' }
+        data: { status: 'IN_PROGRESS' }
       });
 
       const response: ApiResponse = {
@@ -459,7 +459,7 @@ export class AdminController {
       const mission = await prisma.mission.update({
         where: { id },
         data: { 
-          status: 'REJECTED'
+          status: 'CANCELLED'
         }
       });
 
