@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { UserRole } from '@prisma/client';
+
+type UserRole = 'TALENT' | 'ENTERPRISE' | 'INVESTOR' | 'ADMIN';
 
 export const requireRole = (allowedRoles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
